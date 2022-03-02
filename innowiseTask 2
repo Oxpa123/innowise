@@ -1,6 +1,0 @@
-use InnowiseSQLTASK;
-
-select Users.fio, Cards.balance,Banks.bank_title from Users 
-join Accounts on Users.user_id = Accounts.user_id
-join Cards on Accounts.account_id = Cards.account_id
-join Banks on Accounts.bank_id = Banks.bank_id
