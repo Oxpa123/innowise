@@ -1,0 +1,24 @@
+
+USE InnowiseSQLTASK;
+
+--Task 1
+DECLARE @city nvarchar(50)
+SET @city = 'Gomel';
+
+SELECT Banks.bank_title FROM Banks  
+JOIN Branchs ON Branchs.bank_id = Banks.bank_id
+WHERE Branchs.branch_location = @city
+
+
+--Task 2
+select Users.fio, Cards.balance,Banks.bank_title from Users 
+join Accounts on Users.user_id = Accounts.user_id
+join Cards on Accounts.account_id = Cards.account_id
+join Banks on Accounts.bank_id = Banks.bank_id
+
+
+--Task 3
+select Accounts.account_id, abs(sum(Cards.balance) - Accounts.acc_balance) from Accounts 
+join Cards on Accounts.account_id = Cards.account_id
+group by Accounts.account_id,Accounts.acc_balance 
+having abs(sum(Cards.balance) - Accounts.acc_balance) != 0
