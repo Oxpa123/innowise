@@ -22,3 +22,58 @@ select Accounts.account_id, abs(sum(Cards.balance) - Accounts.acc_balance) from 
 join Cards on Accounts.account_id = Cards.account_id
 group by Accounts.account_id,Accounts.acc_balance 
 having abs(sum(Cards.balance) - Accounts.acc_balance) != 0
+
+--Task 4
+select count(Cards.card_id) as Counts, TStatus.status_title from Cards
+join Accounts on Cards.account_id = Accounts.account_id
+join Users on Accounts.user_id = Users.user_id
+join TStatus on Users.status_id = TStatus.status_id
+group by TStatus.status_title
+
+--Task 5 
+go
+create procedure Addmoney as
+begin
+	Update Accounts
+	set acc_balance = acc_balance + 10
+	from (select Users.status_id, Users.user_id from Users group by Users.status_id, Users.user_id ) as stat
+	where Accounts.user_id = stat.user_id and stat.status_id = 1
+end;
+
+--Task 6
+select Accounts.acc_balance from Accounts
+
+select sum(Cards.balance) as sumcard from Cards group by Cards.account_id
+
+select  Accounts.account_id, (Accounts.acc_balance - sum(Cards.balance)) as Available from Accounts 
+join Cards on Accounts.account_id = Cards.account_id
+group by Cards.account_id,Accounts.account_id,Accounts.acc_balance
+
+--Task 7
+declare @add decimal(9,2) = 10
+declare @acc int = 2
+
+begin transaction 
+	update Cards 
+	set balance = balance + @add
+	where Cards.account_id =@acc
+	if(@@ERROR != 0)
+		rollback
+commit
+
+--Task 8
+ALTER trigger [dbo].[AccountsBalance] on [dbo].[Accounts]
+for update 
+as 
+begin transaction
+if ( select i.acc_balance from inserted i) != (
+select sum(cards.balance) from Cards 
+join inserted i on Cards.account_id = i.account_id
+where Cards.account_id = i.account_id)
+begin
+	rollback transaction
+	RAISERROR('uncorrect balance',16,1)
+end
+	else
+	commit transaction
+
