@@ -34,16 +34,17 @@ group by TStatus.status_title
 go
 create procedure Addmoney as
 begin
+begin transaction
 	Update Accounts
 	set acc_balance = acc_balance + 10
 	from (select Users.status_id, Users.user_id from Users group by Users.status_id, Users.user_id ) as stat
 	where Accounts.user_id = stat.user_id and stat.status_id = 1
+		if(@@ERROR != 0)
+		rollback
+commit
 end;
 
 --Task 6
-select Accounts.acc_balance from Accounts
-
-select sum(Cards.balance) as sumcard from Cards group by Cards.account_id
 
 select  Accounts.account_id, (Accounts.acc_balance - sum(Cards.balance)) as Available from Accounts 
 join Cards on Accounts.account_id = Cards.account_id
@@ -62,7 +63,8 @@ begin transaction
 commit
 
 --Task 8
-ALTER trigger [dbo].[AccountsBalance] on [dbo].[Accounts]
+create trigger AccountsBalance
+on Account
 for update 
 as 
 begin transaction
@@ -76,4 +78,21 @@ begin
 end
 	else
 	commit transaction
+	
+	
+create trigger CardsBalance on Cards
+for update 
+as 
+begin transaction
+if ( select sum(i.balance) from inserted i) != (
+select Accounts.acc_balance from Accounts 
+join inserted i on Accounts.account_id = i.account_id
+where Accounts.account_id = i.account_id)
+begin
+	rollback transaction
+	RAISERROR('uncorrect balance',16,1)
+end
+	else
+	commit transaction
+	
 
