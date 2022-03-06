@@ -1,3 +1,64 @@
+--create tables 
+
+create table TStatus
+(
+	status_id int primary key identity,
+	status_title nvarchar(50)
+)
+
+create table Users
+(
+	user_id int primary key identity,
+	fio nvarchar(50),
+	email nvarchar(50),
+	status_id int
+)
+
+
+create table Accounts
+(
+	account_id int primary key identity,
+	bank_id int,
+	user_id int,
+	acc_balance decimal(9,2)
+)
+
+create table Banks
+(
+	bank_id int primary key identity,
+	bank_title nvarchar(50),
+	bank_location nvarchar(50)
+)
+create table Cards
+(
+	card_id int primary key identity,
+	balance decimal(9,2),
+	account_id int
+)
+
+create table Branchs
+(
+	branch_id int primary key identity,
+	bank_id int,
+	branch_location nvarchar(50)
+)
+
+--create references
+
+alter table Users
+add foreign key(status_id) references TStatus(status_id)
+
+alter table Accounts
+add foreign key(user_id) references Users(user_id)
+
+alter table Accounts
+add foreign key(bank_id) references Banks(bank_id)
+
+alter table Cards
+add foreign key(account_id) references Accounts(account_id)
+
+alter table Branchs
+add foreign key(bank_id) references Banks(bank_id)
 
 USE InnowiseSQLTASK;
 
@@ -12,9 +73,12 @@ WHERE Branchs.branch_location = @city
 
 --Task 2
 select Users.fio, Cards.balance,Banks.bank_title from Users 
-join Accounts on Users.user_id = Accounts.user_id
-join Cards on Accounts.account_id = Cards.account_id
-join Banks on Accounts.bank_id = Banks.bank_id
+join Accounts on 
+Users.user_id = Accounts.user_id
+join Cards on 
+Accounts.account_id = Cards.account_id
+join Banks on 
+Accounts.bank_id = Banks.bank_id
 
 
 --Task 3
