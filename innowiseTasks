@@ -12,15 +12,7 @@ create table Users
 	fio nvarchar(50),
 	email nvarchar(50),
 	status_id int
-)
-
-
-create table Accounts
-(
-	account_id int primary key identity,
-	bank_id int,
-	user_id int,
-	acc_balance decimal(9,2)
+	foreign key(status_id) references TStatus(status_id)
 )
 
 create table Banks
@@ -29,11 +21,24 @@ create table Banks
 	bank_title nvarchar(50),
 	bank_location nvarchar(50)
 )
+
+create table Accounts
+(
+	account_id int primary key identity,
+	bank_id int,
+	user_id int,
+	acc_balance decimal(9,2)
+	foreign key(user_id) references Users(user_id)
+	foreign key(bank_id) references Banks(bank_id)
+)
+
+
 create table Cards
 (
 	card_id int primary key identity,
 	balance decimal(9,2),
 	account_id int
+	foreign key(account_id) references Accounts(account_id)
 )
 
 create table Branchs
@@ -41,24 +46,57 @@ create table Branchs
 	branch_id int primary key identity,
 	bank_id int,
 	branch_location nvarchar(50)
+	foreign key(bank_id) references Banks(bank_id)
 )
 
---create references
+--insert data 
 
-alter table Users
-add foreign key(status_id) references TStatus(status_id)
+insert into Banks (bank_title, bank_location) 
+values ('Беларусбанк','РБ'),
+values ('Приорбанк','РБ'),
+values ('Сбербанк','РФ'),
+values ('Укрбанк','Украина'),
+values ('АМ','США')
 
-alter table Accounts
-add foreign key(user_id) references Users(user_id)
 
-alter table Accounts
-add foreign key(bank_id) references Banks(bank_id)
+insert into Branchs (bank_id, branch_location) 
+values (1,'Rechitsa'),
+values (1,'Gomel'),
+values (2,'Gomel'),
+values (2,'Minsk'),
+values (3,'Moscow')
 
-alter table Cards
-add foreign key(account_id) references Accounts(account_id)
 
-alter table Branchs
-add foreign key(bank_id) references Banks(bank_id)
+insert into TStatus (status_title) 
+values ('Student'),
+values ('Old man'),
+values ('Worker'),
+values ('Invlaid')
+
+insert into Users (fio, email,status_id) 
+values ('Andrei','123@mail.ru',1),
+values ('Egor','javalover@mail.ru',1),
+values ('Sf','sfzxc@mail.ru',3),
+values ('Trohova','pensiya@mail.ru',4)
+
+
+insert into Accounts (bank_id, user_id,acc_balance) 
+values (1,1,250.50),
+values (2,2,105),
+values (3,3,3000),
+values (4,1,0.60)
+
+insert into Cards (balance,account_id) 
+values (20.50,1),
+values (100,1),
+values (0.60,4),
+values (3000,3),
+values (105.20,2)
+
+
+
+
+
 
 USE InnowiseSQLTASK;
 
