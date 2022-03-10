@@ -1,0 +1,200 @@
+--create tables 
+
+create table TStatus
+(
+	status_id int primary key identity,
+	status_title nvarchar(50)
+)
+
+create table Users
+(
+	user_id int primary key identity,
+	fio nvarchar(50),
+	email nvarchar(50),
+	status_id int
+	foreign key(status_id) references TStatus(status_id)
+)
+
+create table Banks
+(
+	bank_id int primary key identity,
+	bank_title nvarchar(50),
+	bank_location nvarchar(50)
+)
+
+create table Accounts
+(
+	account_id int primary key identity,
+	bank_id int,
+	user_id int,
+	acc_balance decimal(9,2)
+	foreign key(user_id) references Users(user_id)
+	foreign key(bank_id) references Banks(bank_id)
+)
+
+
+create table Cards
+(
+	card_id int primary key identity,
+	balance decimal(9,2),
+	account_id int
+	foreign key(account_id) references Accounts(account_id)
+)
+
+create table Branchs
+(
+	branch_id int primary key identity,
+	bank_id int,
+	branch_location nvarchar(50)
+	foreign key(bank_id) references Banks(bank_id)
+)
+
+--insert data 
+
+insert into Banks (bank_title, bank_location) 
+values ('Беларусбанк','РБ'),
+values ('Приорбанк','РБ'),
+values ('Сбербанк','РФ'),
+values ('Укрбанк','Украина'),
+values ('АМ','США')
+
+
+insert into Branchs (bank_id, branch_location) 
+values (1,'Rechitsa'),
+values (1,'Gomel'),
+values (2,'Gomel'),
+values (2,'Minsk'),
+values (3,'Moscow')
+
+
+insert into TStatus (status_title) 
+values ('Student'),
+values ('Old man'),
+values ('Worker'),
+values ('Invlaid')
+
+insert into Users (fio, email,status_id) 
+values ('Andrei','123@mail.ru',1),
+values ('Egor','javalover@mail.ru',1),
+values ('Sf','sfzxc@mail.ru',3),
+values ('Trohova','pensiya@mail.ru',4)
+
+
+insert into Accounts (bank_id, user_id,acc_balance) 
+values (1,1,250.50),
+values (2,2,105),
+values (3,3,3000),
+values (4,1,0.60)
+
+insert into Cards (balance,account_id) 
+values (20.50,1),
+values (100,1),
+values (0.60,4),
+values (3000,3),
+values (105.20,2)
+
+
+
+
+
+
+USE InnowiseSQLTASK;
+
+--Task 1
+DECLARE @city nvarchar(50)
+SET @city = 'Gomel';
+
+SELECT Banks.bank_title FROM Banks  
+JOIN Branchs ON Branchs.bank_id = Banks.bank_id
+WHERE Branchs.branch_location = @city
+
+
+--Task 2
+select Users.fio, Cards.balance,Banks.bank_title from Users 
+join Accounts on 
+Users.user_id = Accounts.user_id
+join Cards on 
+Accounts.account_id = Cards.account_id
+join Banks on 
+Accounts.bank_id = Banks.bank_id
+
+
+--Task 3
+select Accounts.account_id, abs(sum(Cards.balance) - Accounts.acc_balance) from Accounts 
+join Cards on Accounts.account_id = Cards.account_id
+group by Accounts.account_id,Accounts.acc_balance 
+having abs(sum(Cards.balance) - Accounts.acc_balance) != 0
+
+--Task 4
+select count(Cards.card_id) as Counts, TStatus.status_title from Cards
+join Accounts on Cards.account_id = Accounts.account_id
+join Users on Accounts.user_id = Users.user_id
+join TStatus on Users.status_id = TStatus.status_id
+group by TStatus.status_title
+
+--Task 5 
+go
+create procedure Addmoney as
+begin
+begin transaction
+	Update Accounts
+	set acc_balance = acc_balance + 10
+	from (select Users.status_id, Users.user_id from Users group by Users.status_id, Users.user_id ) as stat
+	where Accounts.user_id = stat.user_id and stat.status_id = 1
+		if(@@ERROR != 0)
+		rollback
+commit
+end;
+
+--Task 6
+
+select  Accounts.account_id, (Accounts.acc_balance - sum(Cards.balance)) as Available from Accounts 
+join Cards on Accounts.account_id = Cards.account_id
+group by Cards.account_id,Accounts.account_id,Accounts.acc_balance
+
+--Task 7
+declare @add decimal(9,2) = 10
+declare @acc int = 2
+
+begin transaction 
+	update Cards 
+	set balance = balance + @add
+	where Cards.account_id =@acc
+	if(@@ERROR != 0)
+		rollback
+commit
+
+--Task 8
+create trigger AccountsBalance
+on Account
+for update 
+as 
+begin transaction
+if ( select i.acc_balance from inserted i) != (
+select sum(cards.balance) from Cards 
+join inserted i on Cards.account_id = i.account_id
+where Cards.account_id = i.account_id)
+begin
+	rollback transaction
+	RAISERROR('uncorrect balance',16,1)
+end
+	else
+	commit transaction
+	
+	
+create trigger CardsBalance on Cards
+for update 
+as 
+begin transaction
+if ( select sum(i.balance) from inserted i) != (
+select Accounts.acc_balance from Accounts 
+join inserted i on Accounts.account_id = i.account_id
+where Accounts.account_id = i.account_id)
+begin
+	rollback transaction
+	RAISERROR('uncorrect balance',16,1)
+end
+	else
+	commit transaction
+	
+
